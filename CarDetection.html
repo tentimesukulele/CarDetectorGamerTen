@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Car Detection</title>
+  <style>
+    video, canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+<body>
+  <video autoplay></video>
+  <canvas></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+  <script>
+    let video = document.querySelector('video');
+    let canvas = document.querySelector('canvas');
+    let ctx = canvas.getContext('2d');
+
+    // Access the webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        console.error("Error accessing the camera: ", err);
+      });
+
+    // Load the model and start detecting
+    cocoSsd.load().then(model => {
+      function detectFrame() {
+        model.detect(video).then(predictions => {
+          drawBoundingBoxes(predictions);
+          requestAnimationFrame(detectFrame);
+        });
+      }
+      detectFrame();
+    });
+
+    function drawBoundingBoxes(predictions) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      predictions.forEach(prediction => {
+        if (prediction.class === 'car') {
+          ctx.strokeStyle = 'red';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(prediction.bbox[0], prediction.bbox[1], prediction.bbox[2], prediction.bbox[3]);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
